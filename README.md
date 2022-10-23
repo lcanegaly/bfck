@@ -1,2 +1,2 @@
 # bfck
-A brainfuck interpreter
+A brainfuck JIT interpreter
