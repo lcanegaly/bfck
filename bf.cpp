@@ -20,6 +20,7 @@ struct instruction {
 class Bfck {
  public:
   static int Compile(std::string& prog) { 
+    program_length_ = prog.length();
     for (int i = 0; i < prog.length(); i++){
       switch(prog[i]){
         case '>':
@@ -46,8 +47,9 @@ class Bfck {
           break;
         case ']':
           program_[pc_].operator_= jump_backward;
-          pc_jmp_ = pc_;
-          pc_ = stack_[--sp_];
+          pc_jmp_ = stack_[--sp_];
+          program_[pc_].operand_ = pc_jmp_;
+          program_[pc_jmp_].operand_ = pc_;
           break;
         default:
           std::cout << "unexpected input \n";
@@ -58,7 +60,42 @@ class Bfck {
   
     return 1;   
   }
-  static int Excecute() { return 1; }
+  static int Excecute() {
+    pc_ = 0;
+    while (pc_ < program_length_){
+      switch(program_[pc_].operator_){
+        case increment_dp:
+          dp_++;
+          break;
+        case decrement_dp:
+          dp_--;
+          break;
+        case increment:
+          data_[dp_]++;
+          break;
+        case decrement:
+          data_[dp_]--;
+          break;
+        case output:
+          std::cout << data_[dp_];
+          break;
+        case input:
+          data_[dp_] = std::cin.get();
+          break;
+        case jump_forward:
+          if (data_[dp_] == 0) {pc_ = program_[pc_].operand_ + 1; continue;} 
+          break;
+        case jump_backward:
+          pc_ = program_[pc_].operand_;
+          continue;
+        default:
+          std::cout << "unexpected instruction \n";
+          return 0;
+      }
+      pc_++;
+    }
+    return 1;
+  }
 
  private:
   static int pc_;
@@ -68,6 +105,7 @@ class Bfck {
   static instruction program_[];
   static char stack_[];
   static char data_[];
+  static int program_length_;
 };
 
 instruction Bfck::program_[1024];
@@ -77,16 +115,20 @@ int Bfck::pc_ {0};
 int Bfck::dp_ {0};
 int Bfck::sp_ {0};
 int Bfck::pc_jmp_ {0};
+int Bfck::program_length_ {0};
 
 
 int main(int, char**) {
 
-  std::string prog =
+  std::string test_program =
       "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>"
       ".<-.<.+++.------.--------.>>+.>++.";
-  std::cout << "Program called: {## " << prog << " ##} \n";
+  
+  std::string test_program2 = "++[-]" ;
+  
+  //std::cout << "Program called: {## " << prog << " ##} \n";
 
-  if (Bfck::Compile(prog)) {
+  if (Bfck::Compile(test_program)) {
     std::cout << "Compiled Successfully \n";
     if (Bfck::Excecute()) {
       std::cout << "Executed Successfully \n";
