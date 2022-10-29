@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <fstream>
 
 enum op{
   increment_dp,
@@ -24,84 +25,84 @@ class Bfck {
     for (int i = 0; i < prog.length(); i++){
       switch(prog[i]){
         case '>':
-          program_[pc_].operator_= increment_dp;
+          program_[program_counter_].operator_= increment_dp;
           break;
         case '<':
-          program_[pc_].operator_= decrement_dp;
+          program_[program_counter_].operator_= decrement_dp;
           break;
         case '+':
-          program_[pc_].operator_= increment;
+          program_[program_counter_].operator_= increment;
           break;
         case '-':
-          program_[pc_].operator_= decrement;
+          program_[program_counter_].operator_= decrement;
           break;
         case '.':
-          program_[pc_].operator_= output;
+          program_[program_counter_].operator_= output;
           break;
         case ',':
-          program_[pc_].operator_= input;
+          program_[program_counter_].operator_= input;
           break;
         case '[':
-          program_[pc_].operator_= jump_forward;
-          stack_[sp_++] = pc_;
+          program_[program_counter_].operator_= jump_forward;
+          stack_[stack_pointer_++] = program_counter_;
           break;
         case ']':
-          program_[pc_].operator_= jump_backward;
-          pc_jmp_ = stack_[--sp_];
-          program_[pc_].operand_ = pc_jmp_;
-          program_[pc_jmp_].operand_ = pc_;
+          program_[program_counter_].operator_= jump_backward;
+          program_counter_jmp_ = stack_[--stack_pointer_];
+          program_[program_counter_].operand_ = program_counter_jmp_;
+          program_[program_counter_jmp_].operand_ = program_counter_;
           break;
-        default:
-          std::cout << "unexpected input \n";
-          return 0;
+        //default:
+          //std::cout << "unexpected input: \n" << prog[i];     
+          //return 0;
       }
-      pc_++;
+      program_counter_++;
     }
   
     return 1;   
   }
   static int Excecute() {
-    pc_ = 0;
-    while (pc_ < program_length_){
-      switch(program_[pc_].operator_){
+    program_counter_ = 0;
+    while (program_counter_ < program_length_){
+      switch(program_[program_counter_].operator_){
         case increment_dp:
-          dp_++;
+          data_pointer_++;
           break;
         case decrement_dp:
-          dp_--;
+          data_pointer_--;
           break;
         case increment:
-          data_[dp_]++;
+          data_[data_pointer_]++;
           break;
         case decrement:
-          data_[dp_]--;
+          data_[data_pointer_]--;
           break;
         case output:
-          std::cout << data_[dp_];
+          std::cout << data_[data_pointer_];
           break;
         case input:
-          data_[dp_] = std::cin.get();
+          data_[data_pointer_] = std::cin.get();
           break;
         case jump_forward:
-          if (data_[dp_] == 0) {pc_ = program_[pc_].operand_ + 1; continue;} 
+          if (data_[data_pointer_] == 0) {program_counter_ = program_[program_counter_].operand_ + 1; continue;} 
           break;
         case jump_backward:
-          pc_ = program_[pc_].operand_;
+          program_counter_ = program_[program_counter_].operand_;
           continue;
         default:
           std::cout << "unexpected instruction \n";
           return 0;
       }
-      pc_++;
+      program_counter_++;
     }
     return 1;
   }
 
  private:
-  static int pc_;
-  static int pc_jmp_;
-  static int dp_;
-  static int sp_;
+  static int program_counter_;
+  static int program_counter_jmp_;
+  static int data_pointer_;
+  static int stack_pointer_;
   static instruction program_[];
   static char stack_[];
   static char data_[];
@@ -111,31 +112,40 @@ class Bfck {
 instruction Bfck::program_[1024];
 char Bfck::stack_[64]{0};
 char Bfck::data_[64]{0};
-int Bfck::pc_ {0};
-int Bfck::dp_ {0};
-int Bfck::sp_ {0};
-int Bfck::pc_jmp_ {0};
+int Bfck::program_counter_ {0};
+int Bfck::data_pointer_ {0};
+int Bfck::stack_pointer_ {0};
+int Bfck::program_counter_jmp_ {0};
 int Bfck::program_length_ {0};
 
 
-int main(int, char**) {
+int main(int argc, char** argv) {
 
-  std::string test_program =
-      "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>"
-      ".<-.<.+++.------.--------.>>+.>++.";
+  if (argc < 2) return 0;
   
-  std::string test_program2 = "++[-]" ;
+  std::string flag = argv[1];
+  std::string input = argv[2];
   
-  //std::cout << "Program called: {## " << prog << " ##} \n";
-
-  if (Bfck::Compile(test_program)) {
-    std::cout << "Compiled Successfully \n";
-    if (Bfck::Excecute()) {
-      std::cout << "Executed Successfully \n";
-    } else {
-      std::cout << "Error \n";
+  if (flag == "-r"){
+    Bfck::Compile(input);
+    Bfck::Excecute();
+  }else if (flag == "-f"){
+    std::string program_source;
+    std::ifstream source_file (input);
+    if (source_file.is_open()) {
+      std::string line;
+      while ( getline (source_file,line) )
+        {
+          program_source += line;
+        }
     }
-  } else {
-    std::cout << "Compile Error \n";
+    source_file.close();
+    Bfck::Compile(program_source);
+    Bfck::Excecute();
+  }else {
+    std::cout << "please specify a file, or string";
   }
+
+  //test hello world program
+  // "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
 }
