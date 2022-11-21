@@ -64,6 +64,7 @@ class Bfck {
   static int Excecute() {
     program_counter_ = 0;
     while (program_counter_ < program_length_){
+      Monitor(0);
       switch(program_[program_counter_].operator_){
         case increment_dp:
           data_pointer_++;
@@ -96,6 +97,21 @@ class Bfck {
       program_counter_++;
     }
     return 1;
+  }
+
+  static void Monitor(int mode) {
+    static char* ins = "+-><.,[]";
+    std::cout << "INS{" << ins[program_[program_counter_].operator_]
+              << "}  MEM{";
+
+    for (int i = 0; i < 30; i++) 
+      if (i == data_pointer_)
+        std::cout << "| ->" << (int)data_[i] << "<- ";
+      else
+        std::cout << "|" << (int)data_[i];    
+    std::cout << "}\r" << std::flush;
+
+    if (mode == 1) std::cin.get();
   }
 
  private:
